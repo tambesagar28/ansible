@@ -1,0 +1,33 @@
+---
+- hosts: webservers
+  become: yes
+  tasks:
+    - name: If it is not supported
+      fail:
+        msg: This Playbook is only supported in RedHat and Ubuntu.
+      when: ansible_facts['os_family'] != "RedHat" and ansible_facts['os_family'] != "Debian" 
+    - name: Installing Apache
+      package:
+        name: "{{ package_name }}"
+        update_cache: yes
+        state: present
+      notify:
+        - Restarting the Services
+    - name: Installing php-modules
+      package:
+        name: "{{ item }}"
+        update_cache: yes
+        state: present
+      notify:
+        - Restarting the Services
+      loop: "{{ php_modules }}"
+    - name: Deploying files 
+      copy:
+        src: info.php
+        dest: /var/www/html/info.php
+  handlers:
+    - name: Restarting the Services
+      service:
+        name: "{{ package_name }}"
+        enable: yes
+        state: restarted
